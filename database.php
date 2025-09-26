@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS books (
     isbn VARCHAR(20) UNIQUE,
     publication_year YEAR,
     quantity INT NOT NULL DEFAULT 1,
-    available_copies INT NOT NULL DEFAULT 1, 
+    available_copies INT NOT NULL DEFAULT 1,
+    is_Available BOOLEAN NOT NULL DEFAULT TRUE,
     reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );";
 
