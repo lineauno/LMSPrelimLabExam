@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <button type="submit">Search</button>
     </form>
     <?php if ($results && $results->num_rows > 0): ?>
-        <h3>Results:</h3>
+        <h3>The Results:</h3>
         <table border="1" cellpadding="5">
             <tr>
                 <th>Title</th><th>Author</th><th>ISBN</th>
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endwhile; ?>
         </table>
     <?php elseif ($_SERVER["REQUEST_METHOD"] === "POST"): ?>
-        <p>No books found.</p>
+        <p>No books has been found.</p>
     <?php endif; ?>
 </body>
 </html>
