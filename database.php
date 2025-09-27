@@ -29,11 +29,11 @@ CREATE TABLE IF NOT EXISTS books (
     quantity INT NOT NULL DEFAULT 1,
     available_copies INT NOT NULL DEFAULT 1, 
     reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);";
+) ENGINE=InnoDB;
+";
 
-if (!$conn->query($sql_create_books_table)) {
-    echo "Error creating books table: " . $conn->error;
-}
+if (!$conn->query($sql_create_books_table)) 
+    { echo "Error creating books table: " . $conn->error; }
 
 $sql_create_users_table = "
 CREATE TABLE IF NOT EXISTS users (
@@ -42,11 +42,27 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL, 
     role ENUM('librarian', 'user') NOT NULL, 
     reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);";
+) ENGINE=InnoDB;
+";
 
-if (!$conn->query($sql_create_users_table)) {
-    echo "Error creating users table: " . $conn->error;
-}
+if (!$conn->query($sql_create_users_table)) 
+    { echo "Error creating users table: " . $conn->error; }
+
+$sql_create_borrowed_table = "
+CREATE TABLE IF NOT EXISTS borrowed_books (
+    borrow_id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT(6) UNSIGNED NOT NULL,
+    book_id INT(6) UNSIGNED NOT NULL,
+    borrow_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    return_date TIMESTAMP NULL,
+    returned BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (book_id) REFERENCES books(book_id)
+) ENGINE=InnoDB;
+";
+
+if (!$conn->query($sql_create_borrowed_table)) 
+    { echo "Error creating borrowed_books table: " . $conn->error; }
 
 
 $books_to_insert = [

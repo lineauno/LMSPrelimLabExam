@@ -1,7 +1,13 @@
 <?php
 require_once 'database.php';
-
 session_start();
+//log out
+if (isset($_GET['logout'])) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
 
 if (isset($_SESSION['role'])) {
     if ($_SESSION['role'] === 'librarian') {
@@ -19,7 +25,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($input_username) || empty($input_password)) {
         $login_error = "Please enter both username and password.";
     } else {
-
         $stmt = $conn->prepare("SELECT user_id, password_hash, role FROM users WHERE username = ?");
         $stmt->bind_param("s", $input_username);
         $stmt->execute();
@@ -30,7 +35,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $hashed_password = $user['password_hash'];
 
             if (password_verify($input_password, $hashed_password)) {
-
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['username'] = $input_username;
                 $_SESSION['role'] = $user['role'];
@@ -51,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,8 +83,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         <p style="text-align: center; font-size: 0.9em; color: #666;">
             **Test Credentials:**<br>
-            Librarian: `librarian_user` / `admin123`<br>
-            User: `standard_user` / `user123`
+            Librarian: <code>librarian_user / admin123</code><br>
+            User: <code>standard_user / user123</code>
         </p>
 
         <form method="post" action="login.php">

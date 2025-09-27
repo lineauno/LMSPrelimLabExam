@@ -34,7 +34,6 @@ if (isset($_POST['delete_book']) && isset($_POST['book_id'])) {
 }
 
 if (isset($_POST['update_book'])) {
-    // 1. Sanitize and validate inputs
     $book_id = $conn->real_escape_string($_POST['edit_book_id']);
     $title = $conn->real_escape_string($_POST['edit_title']);
     $author = $conn->real_escape_string($_POST['edit_author']);
@@ -71,3 +70,24 @@ if (isset($_POST['update_book'])) {
     header("Location: librarian.php?success=" . urlencode($success_message));
     exit();
 }
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Librarian Home Page</title>
+</head>
+<body>
+
+<a href="page1.php"><button>Button 1</button></a>
+<a href="page2.php"><button>Button 2</button></a>
+<a href="page3.php"><button>Button 3</button></a>
+<a href="login.php?logout=1"><button>Logout</button></a>
+
+<hr>
+
+<?php if (!empty($success_message)) echo "<p>$success_message</p>"; ?>
+<?php if (!empty($error_message)) echo "<p>$error_message</p>"; ?>
+
+</body>
+</html>
