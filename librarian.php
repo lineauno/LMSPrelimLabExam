@@ -1,73 +1,118 @@
 <?php
-require_once 'database.php';
 session_start();
-
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'librarian') {
-    header("Location: login.php");
-    exit();
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'librarian') {
+  header("Location: login.php");
+  exit;
 }
 
-$success_message = '';
-$error_message = '';
-$edit_id = $_GET['edit_id'] ?? null; 
+$servername = "db";  // change to "db" if you're really using Docker
+$username   = "root";
+$password   = "rootpassword";
+$dbname     = "lms_db";
 
-if (isset($_GET['success'])) {
-    $success_message = htmlspecialchars($_GET['success']);
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+  die("Connection Error: " . $conn->connect_error);
 }
 
-if (isset($_POST['delete_book']) && isset($_POST['book_id'])) {
-    $book_id = $conn->real_escape_string($_POST['book_id']);
+$message = "";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  if (!empty($_POST["title"]) && !empty($_POST["author"]) && !empty($_POST["publication_year"]) && !empty($_POST["isbn"])) {
+    $title  = $conn->real_escape_string($_POST["title"]);
+    $author = $conn->real_escape_string($_POST["author"]);
+    $year   = intval($_POST["publication_year"]);
+    $isbn   = $conn->real_escape_string($_POST["isbn"]);
 
-    $sql_delete = "DELETE FROM books WHERE book_id = ?";
-    
-    if ($stmt = $conn->prepare($sql_delete)) {
-        $stmt->bind_param("i", $book_id);
-        if ($stmt->execute()) {
-            $success_message = "✅ Book ID **$book_id** successfully removed from the catalog.";
-        } else {
-            $error_message = "❌ Error deleting book: " . $stmt->error;
-        }
-        $stmt->close();
+    $insertQuery = "INSERT INTO books (title, author, publication_year, isbn) 
+                    VALUES ('$title', '$author', '$year', '$isbn')";
+    if ($conn->query($insertQuery) === TRUE) {
+      $message = "<p style='color:green;'>Book added successfully!</p>";
     } else {
-        $error_message = "❌ Error preparing delete statement: " . $conn->error;
+      $message = "<p style='color:red;'>Insertion failed: " . $conn->error . "</p>";
     }
+  }
 }
 
-if (isset($_POST['update_book'])) {
-    // 1. Sanitize and validate inputs
-    $book_id = $conn->real_escape_string($_POST['edit_book_id']);
-    $title = $conn->real_escape_string($_POST['edit_title']);
-    $author = $conn->real_escape_string($_POST['edit_author']);
-    $quantity = (int)$_POST['edit_quantity'];
-    
-    $current_data = $conn->query("SELECT quantity, available_copies FROM books WHERE book_id = $book_id")->fetch_assoc();
-    
-    if ($current_data) {
-        $quantity_diff = $quantity - $current_data['quantity'];
-        $new_available_copies = $current_data['available_copies'] + $quantity_diff;
-        
-        if ($new_available_copies < 0) {
-            $new_available_copies = 0; 
-        }
-    } else {
-        $error_message = "❌ Cannot update: Book ID not found.";
-        $new_available_copies = $quantity; 
-    }
+$conn->close();
+?>
 
-    $sql_update = "UPDATE books SET title = ?, author = ?, quantity = ?, available_copies = ? WHERE book_id = ?";
-    
-    if ($stmt = $conn->prepare($sql_update)) {
-        $stmt->bind_param("ssiii", $title, $author, $quantity, $new_available_copies, $book_id);
-        if ($stmt->execute()) {
-            $success_message = "✅ Book ID **$book_id** details updated successfully (Title: $title).";
-        } else {
-            $error_message = "❌ Error updating book: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        $error_message = "❌ Error preparing update statement: " . $conn->error;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Book</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffffffff;
+      margin: 0;
+      padding: 0;
+      color: #333;
     }
-    
-    header("Location: librarian.php?success=" . urlencode($success_message));
-    exit();
-}
+    h2 {
+      text-align: center;
+      margin-top: 20px;
+      color: #444;
+    }
+    .container {
+      width: 80%;
+      margin: 20px auto;
+      background: #E0E0D8;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(172, 150, 150, 0.1);
+      text-align: center;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="submit"] {
+      padding: 8px 12px;
+      margin: 8px;
+      border: 1px solid #cac8c8ff;
+      border-radius: 5px;
+      width: 60%;
+    }
+    input[type="submit"] {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    input[type="submit"]:hover {
+      background: #0056b3;
+    }
+    a {
+      display: inline-block;
+      margin-top: 10px;
+      text-decoration: none;
+      background: #28a745;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 5px;
+    }
+    a:hover {
+      background: #218838;
+    }
+    .message {
+      margin-top: 15px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ADD BOOK</h2>
+    <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
+    <form action="librarian.php" method="post">
+      <input type="text" name="title" placeholder="Book Title" required><br>
+      <input type="text" name="author" placeholder="Author" required><br>
+      <input type="number" name="publication_year" placeholder="Year" required><br>
+      <input type="text" name="isbn" placeholder="ISBN" required><br>
+      <input type="submit" value="Save Book">
+    </form>
+  </div>
+</body>
+</html>
