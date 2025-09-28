@@ -1,37 +1,42 @@
 <?php
 session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] != 'librarian') {
-  header("Location: login.php");
-  exit;
+
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'librarian') {
+    header("Location: login.php");
+    exit;
 }
 
-$servername = "db"; 
+$servername = "db";
 $username   = "root";
-$password   = "rootpassword"; 
+$password   = "rootpassword";
 $dbname     = "lms_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-  die("Connection Error: " . $conn->connect_error);
+    die("Connection Error: " . $conn->connect_error);
 }
 
 $message = "";
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if (!empty($_POST["title"]) && !empty($_POST["author"]) && !empty($_POST["publication_year"]) && !empty($_POST["isbn"])) {
-    $title  = $conn->real_escape_string($_POST["title"]);
-    $author = $conn->real_escape_string($_POST["author"]);
-    $year   = intval($_POST["publication_year"]);
-    $isbn   = $conn->real_escape_string($_POST["isbn"]);
 
-    $insertQuery = "INSERT INTO books (title, author, publication_year, isbn) 
-                    VALUES ('$title', '$author', '$year', '$isbn')";
-    if ($conn->query($insertQuery) === TRUE) {
-      $message = "<p style='color:green;'>Book added successfully!</p>";
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!empty($_POST["title"]) && !empty($_POST["author"]) && !empty($_POST["publication_year"]) && !empty($_POST["isbn"])) {
+        $title  = $conn->real_escape_string($_POST["title"]);
+        $author = $conn->real_escape_string($_POST["author"]);
+        $year   = intval($_POST["publication_year"]);
+        $isbn   = $conn->real_escape_string($_POST["isbn"]);
+
+        $insertQuery = "INSERT INTO books (title, author, publication_year, isbn) 
+                        VALUES ('$title', '$author', '$year', '$isbn')";
+
+        if ($conn->query($insertQuery) === TRUE) {
+            $message = "<p style='color:green;'>✅ Book added successfully!</p>";
+        } else {
+            $message = "<p style='color:red;'>❌ Insertion failed: " . $conn->error . "</p>";
+        }
     } else {
-      $message = "<p style='color:red;'>Insertion failed: " . $conn->error . "</p>";
+        $message = "<p style='color:red;'>❌ All fields are required.</p>";
     }
-  }
 }
 
 $conn->close();
@@ -39,67 +44,80 @@ $conn->close();
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Book</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Book</title>
+<style>
     body {
-      font-family: Arial, sans-serif;
-      background: #fff;
-      margin: 0;
-      padding: 0;
-      color: #333;
+        font-family: Arial, sans-serif;
+        background: #fff;
+        margin: 0;
+        padding: 0;
+        color: #333;
     }
     h2 {
-      text-align: center;
-      margin-top: 20px;
-      color: #444;
+        text-align: center;
+        margin-top: 20px;
+        color: #444;
     }
     .container {
-      width: 80%;
-      margin: 20px auto;
-      background: #E0E0D8;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(172, 150, 150, 0.1);
-      text-align: center;
+        width: 80%;
+        margin: 20px auto;
+        background: #E0E0D8;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(172, 150, 150, 0.1);
+        text-align: center;
     }
     input[type="text"],
     input[type="number"],
     input[type="submit"] {
-      padding: 8px 12px;
-      margin: 8px;
-      border: 1px solid #cac8c8ff;
-      border-radius: 5px;
-      width: 60%;
+        padding: 8px 12px;
+        margin: 8px;
+        border: 1px solid #cac8c8;
+        border-radius: 5px;
+        width: 60%;
     }
     input[type="submit"] {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: 0.3s;
     }
     input[type="submit"]:hover {
-      background: #0056b3;
+        background: #0056b3;
     }
     .message {
-      margin-top: 15px;
-      font-size: 16px;
+        margin-top: 15px;
+        font-size: 16px;
     }
-  </style>
+    a {
+        display: inline-block;
+        margin-top: 10px;
+        text-decoration: none;
+        background: #28a745;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 5px;
+    }
+    a:hover {
+        background: #218838;
+    }
+</style>
 </head>
 <body>
-  <div class="container">
+<div class="container">
     <h2>ADD BOOK</h2>
     <?php if (!empty($message)) echo "<div class='message'>$message</div>"; ?>
     <form action="librarian.php" method="post">
-      <input type="text" name="title" placeholder="Book Title" required><br>
-      <input type="text" name="author" placeholder="Author" required><br>
-      <input type="number" name="publication_year" placeholder="Year" required><br>
-      <input type="text" name="isbn" placeholder="ISBN" required><br>
-      <input type="submit" value="Save Book">
+        <input type="text" name="title" placeholder="Book Title" required><br>
+        <input type="text" name="author" placeholder="Author" required><br>
+        <input type="number" name="publication_year" placeholder="Year" required><br>
+        <input type="text" name="isbn" placeholder="ISBN" required><br>
+        <input type="submit" value="Save Book">
     </form>
-  </div>
+    <a href="view_book.php">Back To Catalog</a>
+</div>
 </body>
 </html>
