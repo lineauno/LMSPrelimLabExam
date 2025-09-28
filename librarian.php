@@ -5,9 +5,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != 'librarian') {
   exit;
 }
 
-$servername = "db";  // change to "db" if you're really using Docker
+$servername = "db"; 
 $username   = "root";
-$password   = "rootpassword";
+$password   = "rootpassword"; 
 $dbname     = "lms_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -36,7 +36,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,7 +45,7 @@ $conn->close();
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #ffffffff;
+      background: #fff;
       margin: 0;
       padding: 0;
       color: #333;
@@ -83,18 +82,6 @@ $conn->close();
     }
     input[type="submit"]:hover {
       background: #0056b3;
-    }
-    a {
-      display: inline-block;
-      margin-top: 10px;
-      text-decoration: none;
-      background: #28a745;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 5px;
-    }
-    a:hover {
-      background: #218838;
     }
     .message {
       margin-top: 15px;
