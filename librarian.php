@@ -1,78 +1,40 @@
-<?php
-require_once 'database.php';
-session_start();
+$books = [];
+$sql_select_books = "SELECT book_id, title, author, isbn, publication_year, quantity, available_copies FROM books";
+$where_clauses = [];
+$params = [];
+$param_types = '';
 
-$sql = "SELECT book_id, title, author, isbn, publication_year, quantity, available_copies 
-        FROM books ORDER BY title ASC";
-$result = $conn->query($sql);
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Browse Books - Library Management System</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 20px; }
-        h2 { text-align: center; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #5cb85c; color: white; }
-        tr:hover { background-color: #f1f1f1; }
-        .back-link { display: block; text-align: center; margin-top: 20px; }
-        .status { font-weight: bold; }
-        .available { color: green; }
-        .unavailable { color: red; }
-    </style>
-</head>
-<body>
+if (!empty($search_query)) {
+    $where_clauses[] = "(title LIKE ? OR author LIKE ? OR isbn LIKE ?)";
+    $like_query = "%" . $search_query . "%";
+    $params[] = $like_query;
+    $params[] = $like_query;
+    $params[] = $like_query;
+    $param_types .= 'sss';
+}
 
-    <h2>📚 Browse Book Catalog</h2>
-    
-    <?php if ($result && $result->num_rows > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>ISBN</th>
-                    <th>Year</th>
-                    <th>Total Copies</th>
-                    <th>Available</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($row['title']); ?></td>
-                        <td><?php echo htmlspecialchars($row['author']); ?></td>
-                        <td><?php echo htmlspecialchars($row['isbn']); ?></td>
-                        <td><?php echo htmlspecialchars($row['publication_year']); ?></td>
-                        <td><?php echo (int)$row['quantity']; ?></td>
-                        <td><?php echo (int)$row['available_copies']; ?></td>
-                        <td class="status <?php echo ($row['available_copies'] > 0) ? 'available' : 'unavailable'; ?>">
-                            <?php echo ($row['available_copies'] > 0) ? 'Available ✅' : 'Unavailable ❌'; ?>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+if (!empty($where_clauses)) {
+    $sql_select_books .= " WHERE " . implode(" AND ", $where_clauses);
+}
 
-    <?php else: ?>
-        <p style="text-align: center;">No books found in the catalog.</p>
-    <?php endif; ?>
+$sql_select_books .= " ORDER BY book_id ASC";
 
-    <div class="back-link">
-        <?php if (isset($_SESSION['role'])): ?>
-            <a href="<?php echo ($_SESSION['role'] === 'librarian') ? 'librarian.php' : 'user.php'; ?>">⬅ Back to Dashboard</a>
-        <?php else: ?>
-            <a href="login.php">⬅ Back to Login</a>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
 
-<?php
+if (!empty($params)) {
+    if ($stmt = $conn->prepare($sql_select_books)) {
+        $stmt->bind_param($param_types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    }
+} else {
+    $result = $conn->query($sql_select_books);
+}
+
+if (isset($result) && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $books[] = $row;
+    }
+}
+
 $conn->close();
 ?>
