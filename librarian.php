@@ -2,72 +2,77 @@
 require_once 'database.php';
 session_start();
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'librarian') {
-    header("Location: login.php");
-    exit();
-}
+$sql = "SELECT book_id, title, author, isbn, publication_year, quantity, available_copies 
+        FROM books ORDER BY title ASC";
+$result = $conn->query($sql);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Books - Library Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 20px; }
+        h2 { text-align: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #5cb85c; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        .back-link { display: block; text-align: center; margin-top: 20px; }
+        .status { font-weight: bold; }
+        .available { color: green; }
+        .unavailable { color: red; }
+    </style>
+</head>
+<body>
 
-$success_message = '';
-$error_message = '';
-$edit_id = $_GET['edit_id'] ?? null; 
-
-if (isset($_GET['success'])) {
-    $success_message = htmlspecialchars($_GET['success']);
-}
-
-if (isset($_POST['delete_book']) && isset($_POST['book_id'])) {
-    $book_id = $conn->real_escape_string($_POST['book_id']);
-
-    $sql_delete = "DELETE FROM books WHERE book_id = ?";
+    <h2>📚 Browse Book Catalog</h2>
     
-    if ($stmt = $conn->prepare($sql_delete)) {
-        $stmt->bind_param("i", $book_id);
-        if ($stmt->execute()) {
-            $success_message = "✅ Book ID **$book_id** successfully removed from the catalog.";
-        } else {
-            $error_message = "❌ Error deleting book: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        $error_message = "❌ Error preparing delete statement: " . $conn->error;
-    }
-}
+    <?php if ($result && $result->num_rows > 0): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>ISBN</th>
+                    <th>Year</th>
+                    <th>Total Copies</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($row['title']); ?></td>
+                        <td><?php echo htmlspecialchars($row['author']); ?></td>
+                        <td><?php echo htmlspecialchars($row['isbn']); ?></td>
+                        <td><?php echo htmlspecialchars($row['publication_year']); ?></td>
+                        <td><?php echo (int)$row['quantity']; ?></td>
+                        <td><?php echo (int)$row['available_copies']; ?></td>
+                        <td class="status <?php echo ($row['available_copies'] > 0) ? 'available' : 'unavailable'; ?>">
+                            <?php echo ($row['available_copies'] > 0) ? 'Available ✅' : 'Unavailable ❌'; ?>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
 
-if (isset($_POST['update_book'])) {
-    // 1. Sanitize and validate inputs
-    $book_id = $conn->real_escape_string($_POST['edit_book_id']);
-    $title = $conn->real_escape_string($_POST['edit_title']);
-    $author = $conn->real_escape_string($_POST['edit_author']);
-    $quantity = (int)$_POST['edit_quantity'];
-    
-    $current_data = $conn->query("SELECT quantity, available_copies FROM books WHERE book_id = $book_id")->fetch_assoc();
-    
-    if ($current_data) {
-        $quantity_diff = $quantity - $current_data['quantity'];
-        $new_available_copies = $current_data['available_copies'] + $quantity_diff;
-        
-        if ($new_available_copies < 0) {
-            $new_available_copies = 0; 
-        }
-    } else {
-        $error_message = "❌ Cannot update: Book ID not found.";
-        $new_available_copies = $quantity; 
-    }
+    <?php else: ?>
+        <p style="text-align: center;">No books found in the catalog.</p>
+    <?php endif; ?>
 
-    $sql_update = "UPDATE books SET title = ?, author = ?, quantity = ?, available_copies = ? WHERE book_id = ?";
-    
-    if ($stmt = $conn->prepare($sql_update)) {
-        $stmt->bind_param("ssiii", $title, $author, $quantity, $new_available_copies, $book_id);
-        if ($stmt->execute()) {
-            $success_message = "✅ Book ID **$book_id** details updated successfully (Title: $title).";
-        } else {
-            $error_message = "❌ Error updating book: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        $error_message = "❌ Error preparing update statement: " . $conn->error;
-    }
-    
-    header("Location: librarian.php?success=" . urlencode($success_message));
-    exit();
-}
+    <div class="back-link">
+        <?php if (isset($_SESSION['role'])): ?>
+            <a href="<?php echo ($_SESSION['role'] === 'librarian') ? 'librarian.php' : 'user.php'; ?>">⬅ Back to Dashboard</a>
+        <?php else: ?>
+            <a href="login.php">⬅ Back to Login</a>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+
+<?php
+$conn->close();
+?>
